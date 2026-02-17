@@ -3,10 +3,26 @@ import express from "express";
 import cors from "cors";
 
 const app = express();
-app.use(cors({ origin: "http://localhost:5173" }));
+const clientOrigin = process.env.CLIENT_ORIGIN ?? "http://localhost:5173";
+const port = Number(process.env.PORT ?? 8787);
+
+app.use(cors({ origin: clientOrigin }));
 app.use(express.json());
 
 type GenerateBody = { prompt?: string };
+type OpenAIContent = { type?: string; text?: string };
+type OpenAIOutputItem = { content?: OpenAIContent[] };
+type OpenAIResponse = { output?: OpenAIOutputItem[] };
+
+function extractOutputText(data: OpenAIResponse): string {
+  const outputText = (data.output ?? [])
+    .flatMap((item) => item.content ?? [])
+    .filter((content) => content.type === "output_text" && typeof content.text === "string")
+    .map((content) => content.text)
+    .join("");
+
+  return outputText || "(No output text returned.)";
+}
 
 app.post("/api/generate", async (req, res) => {
   try {
@@ -31,28 +47,35 @@ app.post("/api/generate", async (req, res) => {
         model: "gpt-4.1-mini",
         input: prompt.trim(),
       }),
+      signal: AbortSignal.timeout(30_000),
     });
 
     if (!result.ok) {
-      const text = await result.text();
-      return res.status(result.status).json({ error: text });
+      const upstreamBody = await result.json().catch(() => null);
+      const message =
+        typeof upstreamBody === "object" &&
+        upstreamBody !== null &&
+        "error" in upstreamBody &&
+        typeof upstreamBody.error === "object" &&
+        upstreamBody.error !== null &&
+        "message" in upstreamBody.error &&
+        typeof upstreamBody.error.message === "string"
+          ? upstreamBody.error.message
+          : "Upstream API request failed.";
+
+      return res.status(result.status).json({ error: message });
     }
 
-    const data: any = await result.json();
-
-    const outputText =
-      (data.output ?? [])
-        .flatMap((o: any) => o.content ?? [])
-        .filter((c: any) => c.type === "output_text")
-        .map((c: any) => c.text)
-        .join("") || "(No output text returned.)";
+    const data = (await result.json()) as OpenAIResponse;
+    const outputText = extractOutputText(data);
 
     res.json({ text: outputText });
-  } catch (err: any) {
-    res.status(500).json({ error: err?.message ?? "Unknown error" });
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : "Unknown error";
+    res.status(500).json({ error: message });
   }
 });
 
-app.listen(process.env.PORT || 8787, () => {
-  console.log(`Server: http://localhost:${process.env.PORT || 8787}`);
+app.listen(port, () => {
+  console.log(`Server: http://localhost:${port}`);
 });
