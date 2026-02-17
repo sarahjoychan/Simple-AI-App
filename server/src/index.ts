@@ -13,6 +13,13 @@ type GenerateBody = { prompt?: string };
 type OpenAIContent = { type?: string; text?: string };
 type OpenAIOutputItem = { content?: OpenAIContent[] };
 type OpenAIResponse = { output?: OpenAIOutputItem[] };
+type UpstreamErrorShape = { error?: { message?: string } };
+
+function extractPrompt(body: unknown): string {
+  if (!body || typeof body !== "object") return "";
+  const prompt = (body as GenerateBody).prompt;
+  return typeof prompt === "string" ? prompt.trim() : "";
+}
 
 function extractOutputText(data: OpenAIResponse): string {
   const outputText = (data.output ?? [])
@@ -24,11 +31,16 @@ function extractOutputText(data: OpenAIResponse): string {
   return outputText || "(No output text returned.)";
 }
 
+function extractUpstreamErrorMessage(payload: unknown): string {
+  const maybeError = payload as UpstreamErrorShape;
+  return maybeError?.error?.message || "Upstream API request failed.";
+}
+
 app.post("/api/generate", async (req, res) => {
   try {
-    const { prompt } = req.body as GenerateBody;
+    const prompt = extractPrompt(req.body);
 
-    if (!prompt || !prompt.trim()) {
+    if (!prompt) {
       return res.status(400).json({ error: "Prompt is required." });
     }
 
@@ -45,23 +57,14 @@ app.post("/api/generate", async (req, res) => {
       },
       body: JSON.stringify({
         model: "gpt-4.1-mini",
-        input: prompt.trim(),
+        input: prompt,
       }),
       signal: AbortSignal.timeout(30_000),
     });
 
     if (!result.ok) {
       const upstreamBody = await result.json().catch(() => null);
-      const message =
-        typeof upstreamBody === "object" &&
-        upstreamBody !== null &&
-        "error" in upstreamBody &&
-        typeof upstreamBody.error === "object" &&
-        upstreamBody.error !== null &&
-        "message" in upstreamBody.error &&
-        typeof upstreamBody.error.message === "string"
-          ? upstreamBody.error.message
-          : "Upstream API request failed.";
+      const message = extractUpstreamErrorMessage(upstreamBody);
 
       return res.status(result.status).json({ error: message });
     }

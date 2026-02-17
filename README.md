@@ -37,6 +37,7 @@ Important:
 - The repository does not include real API keys.
 - Each developer must add their own `OPENAI_API_KEY` locally in `server/.env`.
 - `server/.env.example` is the template that should be committed, not `server/.env`.
+- This repository does not include a passkey/API key. If you need access to a key for this project, contact me directly so I can confirm whether access should be granted.
 
 Start backend:
 

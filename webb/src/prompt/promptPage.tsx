@@ -1,5 +1,6 @@
-import { useState, type KeyboardEvent } from "react";
-import { styles } from "./promptStyles";
+import { useEffect, useRef, useState, type KeyboardEvent } from "react";
+import { promptPageCss, styles } from "./promptStyles";
+import type { HistoryItem } from "./promptTypes";
 import { usePrompt } from "./usePrompt";
 
 const RESPONSE_PREVIEW_LENGTH = 180;
@@ -12,6 +13,14 @@ export function PromptPage() {
         canSubmit, submit, clearAll
     } = usePrompt();
     const [expandedHistoryIds, setExpandedHistoryIds] = useState<Set<string>>(new Set());
+    const promptInputRef = useRef<HTMLTextAreaElement | null>(null);
+
+    useEffect(() => {
+        const input = promptInputRef.current;
+        if (!input) return;
+        input.style.height = "auto";
+        input.style.height = `${input.scrollHeight}px`;
+    }, [prompt]);
 
     function onInputKeyDown(e: KeyboardEvent<HTMLTextAreaElement>) {
         if (e.key === "Enter" && !e.shiftKey) {
@@ -23,31 +32,60 @@ export function PromptPage() {
     function toggleHistoryResponse(id: string) {
         setExpandedHistoryIds((prev) => {
             const next = new Set(prev);
-            if (next.has(id)) {
-                next.delete(id);
-            } else {
-                next.add(id);
-            }
+            next.has(id) ? next.delete(id) : next.add(id);  
             return next;
         });
     }
 
     function getResponsePreview(text: string) {
-        if (text.length <= RESPONSE_PREVIEW_LENGTH) {
-            return text;
-        }
-
+        if (text.length <= RESPONSE_PREVIEW_LENGTH) return text;
         return `${text.slice(0, RESPONSE_PREVIEW_LENGTH)}...`;
+    }
+
+    function renderHistoryEntry(entry: HistoryItem) {
+        const isExpanded = expandedHistoryIds.has(entry.id);
+        const shouldShowHint = entry.response.length > RESPONSE_PREVIEW_LENGTH;
+
+        return (
+            <div key={entry.id} style={styles.historyCard}>
+                <div style={styles.historyTime}>{new Date(entry.createdAt).toLocaleString()}</div>
+                <div style={styles.historyPromptWrap}>
+                    <strong>Prompt:</strong>
+                    <div style={styles.preWrap}>{entry.prompt}</div>
+                </div>
+                <div style={styles.historyResponseWrap}>
+                    <strong>Response:</strong>
+                    <button
+                        type="button"
+                        style={styles.responseToggle}
+                        onClick={() => toggleHistoryResponse(entry.id)}
+                    >
+                        <div style={styles.preWrap}>
+                            {isExpanded ? entry.response : getResponsePreview(entry.response)}
+                        </div>
+                        {shouldShowHint && (
+                            <div style={styles.responseHint}>
+                                {isExpanded ? "Click to collapse" : "Click to expand"}
+                            </div>
+                        )}
+                    </button>
+                </div>
+            </div>
+        );
     }
 
     return (
         <div style={styles.page}>
+            <style>{promptPageCss}</style>
             <header style={styles.header}>
                 <h1 style={{ margin: 0 }}>AI Prompt App</h1>
             </header>
 
             <div style={styles.inputRow}>
                 <textarea
+                    ref={promptInputRef}
+                    className="prompt-input"
+                    rows={1}
                     value={prompt}
                     onChange={(e) => setPrompt(e.target.value)}
                     placeholder="Give me a prompt... (Enter to submit, Shift+Enter for new line)"
@@ -85,36 +123,7 @@ export function PromptPage() {
                     <p style={styles.emptyState}>You have no history yet.</p>
                 ) : (
                     <div style={styles.historyList}>
-                        {history.map((entry) => (
-                            <div key={entry.id} style={styles.historyCard}>
-                                <div style={styles.historyTime}>{new Date(entry.createdAt).toLocaleString()}</div>
-                                <div style={styles.historyPromptWrap}>
-                                    <strong>Prompt:</strong>
-                                    <div style={styles.preWrap}>{entry.prompt}</div>
-                                </div>
-                                <div style={styles.historyResponseWrap}>
-                                    <strong>Response:</strong>
-                                    <button
-                                        type="button"
-                                        style={styles.responseToggle}
-                                        onClick={() => toggleHistoryResponse(entry.id)}
-                                    >
-                                        <div style={styles.preWrap}>
-                                            {expandedHistoryIds.has(entry.id)
-                                                ? entry.response
-                                                : getResponsePreview(entry.response)}
-                                        </div>
-                                        {entry.response.length > RESPONSE_PREVIEW_LENGTH && (
-                                            <div style={styles.responseHint}>
-                                                {expandedHistoryIds.has(entry.id)
-                                                    ? "Click to collapse"
-                                                    : "Click to expand"}
-                                            </div>
-                                        )}
-                                    </button>
-                                </div>
-                            </div>
-                        ))}
+                        {history.map(renderHistoryEntry)}
                     </div>
                 )}
             </section>

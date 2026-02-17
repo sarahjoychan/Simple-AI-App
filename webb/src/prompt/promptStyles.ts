@@ -2,7 +2,15 @@ export const styles = {
     page: { maxWidth: 900, margin: "40px auto", padding: 16, fontFamily: "system-ui" },
     header: { display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12 },
     inputRow: { marginTop: 12, display: "flex", gap: 8, alignItems: "center" },
-    input: { flex: 1, padding: 10, fontSize: 16, minHeight: 52, resize: "vertical" as const },
+    input: {
+        flex: 1,
+        padding: 10,
+        fontSize: 16,
+        minHeight: 22,
+        maxHeight: 160,
+        overflowY: "auto" as const,
+        resize: "none" as const,
+    },
     button: {
         padding: "10px 14px",
         background: "#2563eb",
@@ -60,3 +68,9 @@ export const styles = {
     responseHint: { marginTop: 8, fontSize: 12, opacity: 0.7 },
     preWrap: { whiteSpace: "pre-wrap" },
 } as const;
+
+export const promptPageCss = `
+.prompt-input::placeholder {
+    font-size: 14px;
+}
+`;

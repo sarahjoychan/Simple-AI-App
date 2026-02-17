@@ -6,6 +6,11 @@ const clientOrigin = process.env.CLIENT_ORIGIN ?? "http://localhost:5173";
 const port = Number(process.env.PORT ?? 8787);
 app.use(cors({ origin: clientOrigin }));
 app.use(express.json());
+function extractPrompt(body) {
+    if (!body || typeof body !== "object") return "";
+    const prompt = body.prompt;
+    return typeof prompt === "string" ? prompt.trim() : "";
+}
 function extractOutputText(data) {
     const outputText = (data.output ?? [])
         .flatMap((item) => item.content ?? [])
@@ -14,10 +19,14 @@ function extractOutputText(data) {
         .join("");
     return outputText || "(No output text returned.)";
 }
+function extractUpstreamErrorMessage(payload) {
+    const maybeError = payload;
+    return maybeError?.error?.message || "Upstream API request failed.";
+}
 app.post("/api/generate", async (req, res) => {
     try {
-        const { prompt } = req.body;
-        if (!prompt || !prompt.trim()) {
+        const prompt = extractPrompt(req.body);
+        if (!prompt) {
             return res.status(400).json({ error: "Prompt is required." });
         }
         const apiKey = process.env.OPENAI_API_KEY;
@@ -32,21 +41,13 @@ app.post("/api/generate", async (req, res) => {
             },
             body: JSON.stringify({
                 model: "gpt-4.1-mini",
-                input: prompt.trim(),
+                input: prompt,
             }),
             signal: AbortSignal.timeout(30_000),
         });
         if (!result.ok) {
             const upstreamBody = await result.json().catch(() => null);
-            const message = typeof upstreamBody === "object" &&
-                upstreamBody !== null &&
-                "error" in upstreamBody &&
-                typeof upstreamBody.error === "object" &&
-                upstreamBody.error !== null &&
-                "message" in upstreamBody.error &&
-                typeof upstreamBody.error.message === "string"
-                ? upstreamBody.error.message
-                : "Upstream API request failed.";
+            const message = extractUpstreamErrorMessage(upstreamBody);
             return res.status(result.status).json({ error: message });
         }
         const data = (await result.json());

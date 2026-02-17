@@ -5,47 +5,48 @@ import type { HistoryItem } from "./promptTypes";
 
 function uid() {
     return Math.random().toString(36).slice(2) + Date.now().toString(36);
-};
+}
 
 export function usePrompt() {
-    const [ prompt, setPrompt ] = useState("");
-    const [ response, setResponse ] = useState("");
-    const [ history, setHistory ] = useState<HistoryItem[]>(() => loadHistory());
-    const [ loading, setLoading ] = useState(false);
-    const [ error, setError ] = useState<string | null>(null);
+    const [prompt, setPrompt] = useState("");
+    const [response, setResponse] = useState("");
+    const [history, setHistory] = useState<HistoryItem[]>(() => loadHistory());
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState<string | null>(null);
 
     useEffect(() => {
         saveHistory(history);
-    }, [ history ]);
+    }, [history]);
 
     const canSubmit = useMemo(() => !!prompt.trim() && !loading, [prompt, loading]);
 
     async function submit() {
-        const p = prompt.trim();
-        if (!p || loading) return;
+        const trimmedPrompt = prompt.trim();
+        if (!trimmedPrompt || loading) return;
 
         setLoading(true);
         setError(null);
         setResponse("");
 
         try {
-            const text = await generate(p);
+            const text = await generate(trimmedPrompt);
             setResponse(text);
+
             const item: HistoryItem = {
                 id: uid(),
-                prompt: p,
+                prompt: trimmedPrompt,
                 response: text,
                 createdAt: Date.now(),
             };
 
             setHistory((prev) => [item, ...prev]);
             setPrompt("");
-        } catch (error: any) {
-            setError(error?.message ?? "Something went wrong");
+        } catch (err: unknown) {
+            setError(err instanceof Error ? err.message : "Something went wrong");
         } finally {
             setLoading(false);
         }
-    };
+    }
 
     function clearAll() {
         setPrompt("");
@@ -53,7 +54,7 @@ export function usePrompt() {
         setError(null);
         setHistory([]);
         clearHistory();
-    };
+    }
 
     return {
         prompt,
@@ -66,4 +67,4 @@ export function usePrompt() {
         submit,
         clearAll,
     };
-};
+}
