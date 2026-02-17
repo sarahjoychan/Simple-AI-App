@@ -1,0 +1,24 @@
+.DS_Store
+
+# Dependencies
+node_modules/
+server/node_modules/
+webb/node_modules/
+
+# Build output
+dist/
+server/dist/
+webb/dist/
+
+# Environment files
+.env
+.env.*
+!.env.example
+server/.env
+webb/.env
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*

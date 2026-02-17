@@ -5,7 +5,7 @@ import { usePrompt } from "./usePrompt";
 export function PromptPage() {
     const {
         prompt, setPrompt,
-        history,
+        history, response,
         loading, error,
         canSubmit, submit, clearAll
     } = usePrompt();
@@ -43,6 +43,13 @@ export function PromptPage() {
                 <div style={styles.errorBox}>
                     <strong> Error: </strong>
                     {error}
+                </div>
+            )}
+
+            {response && (
+                <div>
+                    <strong>Resonse</strong>
+                    <div> {response} </div>
                 </div>
             )}
 
