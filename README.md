@@ -33,6 +33,11 @@ PORT=8787
 CLIENT_ORIGIN=http://localhost:5173
 ```
 
+Important:
+- The repository does not include real API keys.
+- Each developer must add their own `OPENAI_API_KEY` locally in `server/.env`.
+- `server/.env.example` is the template that should be committed, not `server/.env`.
+
 Start backend:
 
 ```bash
