@@ -108,7 +108,7 @@ export function PromptPage() {
             <section style={styles.latestResponseSection}>
                 <h2 style={styles.latestResponseTitle}>Latest Response</h2>
                 <div style={styles.latestResponseBody}>
-                    {loading ? "Generating response..." : response || "Submit a prompt to see the latest response."}
+                    {loading ? "Generating response..." : response || "Submit a prompt to get a response."}
                 </div>
             </section>
 
