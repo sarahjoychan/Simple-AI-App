@@ -1,4 +1,4 @@
-import { use, useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { generate } from "./promptApi";
 import { clearHistory, loadHistory, saveHistory } from "./promptStorage";
 import type { HistoryItem } from "./promptTypes";
@@ -67,4 +67,3 @@ export function usePrompt() {
         clearAll,
     };
 };
-

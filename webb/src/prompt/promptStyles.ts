@@ -1,0 +1,16 @@
+export const styles = {
+    page: { maxWidth: 900, margin: "40px auto", padding: 16, fontFamily: "system-ui" },
+    header: { display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12 },
+    inputRow: { marginTop: 12, display: "flex", gap: 8 },
+    input: { flex: 1, padding: 10, fontSize: 16 },
+    button: { padding: "10px 14px" },
+    clearButton: { padding: "8px 12px" },
+    errorBox: { marginTop: 12, padding: 12, background: "#ffe6e6", border: "1px solid #ffb3b3" },
+    historySection: { marginTop: 12, padding: 12, border: "1px solid #ddd", borderRadius: 10 },
+    emptyState: { opacity: 0.7 },
+    historyList: { display: "flex", flexDirection: "column", gap: 12 },
+    historyCard: { border: "1px solid #ddd", borderRadius: 10, padding: 12 },
+    historyTime: { fontSize: 12, opacity: 0.7 },
+    historyPromptWrap: { marginTop: 8 },
+    preWrap: { whiteSpace: "pre-wrap" },
+} as const;
